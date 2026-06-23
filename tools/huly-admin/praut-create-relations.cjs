@@ -79,10 +79,12 @@ async function main () {
   const existing = await client.findAll('core:class:Association', {})
   const existKey = new Set(existing.map((e) => e.classA + '|' + e.classB + '|' + e.nameA))
 
-  // mapa názvů karet → MasterTag _id
+  // mapa názvů karet → MasterTag _id (shoda přesná, jinak podřetězcem)
   const masterTags = await client.findAll('card:class:MasterTag', {})
-  const cardByName = {}
-  for (const t of masterTags) cardByName[norm(t.label || t.name || t._id)] = { id: t._id, label: String(t.label || t.name || t._id).split(':').pop() }
+  const cards = masterTags.map((t) => ({ id: t._id, label: String(t.label || t.name || t._id).split(':').pop(), n: norm(t.label || t.name || t._id) }))
+  function findCard (key) {
+    return cards.find((c) => c.n === key) || cards.find((c) => c.n.includes(key))
+  }
 
   console.log('\n========== TYPY VZTAHŮ ==========')
   console.log('Režim:', apply ? 'APPLY (vytváří)' : 'DRY-RUN (jen výpis)')
