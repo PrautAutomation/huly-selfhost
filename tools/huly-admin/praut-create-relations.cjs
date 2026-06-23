@@ -96,7 +96,7 @@ async function main () {
   for (const r of CONTACT_RELS) plan.push({ classA: r.a, classB: r.b, nameA: r.nameA, nameB: r.nameB, type: r.type, labelB: r.b.split(':').pop() })
   const missing = []
   for (const r of CARD_RELS) {
-    const card = cardByName[r.bCard]
+    const card = findCard(r.bCard)
     if (!card) { missing.push(r.bCard); continue }
     plan.push({ classA: r.a, classB: card.id, nameA: r.nameA, nameB: r.nameB, type: r.type, labelB: card.label })
   }
