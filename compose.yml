@@ -216,6 +216,7 @@ services:
       - SERVER_PORT=8080
       - SERVER_SECRET=${SECRET}
       - LOVE_ENDPOINT=${LOVE_ENDPOINT:-}
+      - LIVEKIT_WS=${LIVEKIT_HOST:-}
       - ACCOUNTS_URL=http${SECURE:+s}://${HOST_ADDRESS}/_accounts
       - ACCOUNTS_URL_INTERNAL=http://account:3000
       - REKONI_URL=http${SECURE:+s}://${HOST_ADDRESS}/_rekoni
