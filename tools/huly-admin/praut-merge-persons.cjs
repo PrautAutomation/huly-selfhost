@@ -27,8 +27,8 @@ const crypto = require('crypto')
 const coreMod = require('@hcengineering/core')
 const core = coreMod.default
 const { TxOperations, systemAccountUuid } = coreMod
-const contactMod = require('@hcengineering/contact')
-const contact = contactMod.default
+// @hcengineering/contact není závislost import-tool → použijeme přímo stringová plugin-id.
+const contact = { class: { Person: 'contact:class:Person', SocialIdentity: 'contact:class:SocialIdentity' } }
 const { setMetadata } = require('@hcengineering/platform')
 const serverClientPlugin = require('@hcengineering/server-client').default
 const { createClient, getAccountClient } = require('@hcengineering/server-client')
