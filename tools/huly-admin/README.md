@@ -85,6 +85,8 @@ ověřena jen shoda struktury s funkčním pilotem (dumpem).
 | `praut-build-processes.cjs` | Vytvoří/obnoví 3 automatizační procesy (Lead 7 dní, SLA 1 den, Zakázka v riziku) dle vzoru ručního pilotu. Idempotentní, pilot nedotčen. `--apply` provede. |
 | `praut-hide-types.cjs` | Skryje 14 nadbytečných typů karet (`removed=true`) — zůstane 8 workflow typů. Vratné `--restore`. Nemaže karty. `--apply` provede. |
 | `praut-account-reset.cjs` | Reset hesla + vrácení uživatele do workspace `praut` (zapomenuté heslo). DRY-RUN bez `--apply`. Přes `restorePassword` (nastaví heslo + znovu ověří e-mail) + `assignWorkspace`. Pozor: zamčený účet (5+ neúspěšných loginů) jde odemknout jen DB UPDATE `global_account.account SET failed_login_attempts=0` na serveru — skript vypíše přesný příkaz. |
+| `praut-merge-persons.cjs` | Sloučí dvě „globální osoby" (kontakty) na účtové úrovni — řeší UI chybu „Nelze sloučit globální osoby". `--search <jméno>` vypíše kandidáty s personUuid + social ID; `--primary <uuid> --secondary <uuid>` = DRY-RUN diagnostika; `--apply` provede přes `mergeSpecifiedAccounts`/`mergeSpecifiedPersons`. Sekundární nesmí mít ověřené ID (jinak větev accounts). Pozn.: import-tool nemá `@hcengineering/contact` → skript používá stringová plugin-id. |
+| `praut-create-relations.cjs` | Vytvoří kurovanou sadu 15 typů vztahů (`core:class:Association`) — bez nich je UI „Přidat vztah" prázdné. Kontakty (Osoba↔Osoba/Firma, Firma↔Firma) + napojení na byznys karty (Lead/Příležitost/Nabídka/Zakázka/Projekt). Idempotentní (dvojice classA+classB+nameA), DRY-RUN bez `--apply`. Nemaže existující asociace. |
 
 ## Důležitý detail formátu filtru
 
