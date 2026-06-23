@@ -89,7 +89,7 @@ async function main () {
   console.log('\n========== TYPY VZTAHŮ ==========')
   console.log('Režim:', apply ? 'APPLY (vytváří)' : 'DRY-RUN (jen výpis)')
   console.log('Existujících asociací:', existing.length, '| MasterTag karet:', masterTags.length)
-  console.log('Nalezené byznys karty:', Object.values(cardByName).map((c) => c.label).join(', ') || '(žádné)')
+  console.log('Nalezené byznys karty:', cards.map((c) => c.label).join(', ') || '(žádné)')
 
   // sestav finální seznam
   const plan = []
