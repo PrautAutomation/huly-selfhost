@@ -65,7 +65,8 @@ done
 # --- 2) HTTP dostupnost ---
 check_http () {
   local path="$1" code
-  code="$(curl -fsS -o /dev/null -w '%{http_code}' --max-time 15 "${HEALTH_URL}${path}" 2>/dev/null || echo "000")"
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "${HEALTH_URL}${path}" 2>/dev/null)"
+  code="${code:-000}"
   if [ "$code" != "200" ]; then
     add_problem "HTTP ${HEALTH_URL}${path} vrátilo ${code} (čekáno 200)."
   fi
