@@ -32,7 +32,10 @@ cd "$ROOT_DIR"
 export TZ="${TZ:-Europe/Prague}"
 
 PRAUT_CONF="${PRAUT_CONF:-$ROOT_DIR/huly_v7.conf}"
-HEALTH_URL="${HEALTH_URL:-https://huly.praut.cz}"
+# Health check runs ON the server (cron) → kontroluj LOKÁLNÍ endpoint. Veřejná
+# adresa https://huly.praut.cz zevnitř serveru často neprojde (NAT hairpin),
+# i když web pro uživatele běží. Docker nginx poslouchá na portu 80.
+HEALTH_URL="${HEALTH_URL:-http://127.0.0.1}"
 MUST_RUN_SERVICES="${MUST_RUN_SERVICES:-nginx cockroach redpanda minio elastic transactor account front fulltext stats kvs}"
 DISK_THRESHOLD_PCT="${DISK_THRESHOLD_PCT:-85}"
 BACKUP_ROOT="${BACKUP_ROOT:-backup-praut/scheduled}"
