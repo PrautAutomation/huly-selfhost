@@ -6,5 +6,5 @@ SCRIPT="/Users/stepan/praut/huly-selfhost/tools/huly-admin/praut-onboard-watch.c
 LOG="/Users/stepan/praut/praut-onboard-watch.log"
 cd "$IMPORT_TOOL" || exit 1
 echo "----- $(date) -----" >> "$LOG"
-NODE_PATH="$IMPORT_TOOL/node_modules" /usr/bin/env node "$SCRIPT" --apply 2>&1 \
+NODE_PATH="$IMPORT_TOOL/node_modules" /opt/homebrew/bin/node "$SCRIPT" --apply 2>&1 \
   | grep -v "no document found" >> "$LOG" 2>&1
