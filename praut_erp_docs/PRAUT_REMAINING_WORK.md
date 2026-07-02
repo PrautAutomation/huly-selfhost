@@ -2,6 +2,10 @@
 
 Aktualni seznam nedodelku po full rollout importu 2026-06-12.
 
+> **2026-07-08: Vznikla kompletni roadmapa vylepseni** — `docs/improvements/ROADMAP-2026-07.md`
+> (22 ukolu T01-T22 se samostatnymi zadanimi pro AI agenty v `docs/improvements/tasks/`).
+> Polozky nize zustavaji jako historie; nove ukoly se ridi roadmapou.
+
 ## Hotovo a nevracet zpet
 
 - Workspace `Praut` / `praut` existuje.
