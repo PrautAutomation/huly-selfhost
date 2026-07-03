@@ -19,6 +19,7 @@ const { TxOperations } = coreMod
 const { setMetadata } = require('@hcengineering/platform')
 const serverClientPlugin = require('@hcengineering/server-client').default
 const { createClient, getAccountClient } = require('@hcengineering/server-client')
+const { uploadDocContent } = require(require('path').join(__dirname, 'praut-doc-content.cjs'))
 
 const APPLY = process.argv.includes('--apply')
 
@@ -254,7 +255,7 @@ const PRIRUCKA_CONTENT = `
 </ul>
 `
 
-async function createOrReplaceDoc (client, spaceId, spaceName, title, content, apply) {
+async function createOrReplaceDoc (client, spaceId, spaceName, title, content, apply, wsToken) {
   const existing = await client.findAll('document:class:Document', { space: spaceId })
   const found = existing.find(d => d.title === title)
   if (found) {
@@ -270,16 +271,18 @@ async function createOrReplaceDoc (client, spaceId, spaceName, title, content, a
     console.log(`  DRY-RUN: "${title}" by byl vytvořen v "${spaceName}"`)
     return null
   }
-  const docId = await client.createDoc('document:class:Document', spaceId, {
+  const docId = coreMod.generateId()
+  const blobId = await uploadDocContent(wsToken, docId, content)
+  await client.createDoc('document:class:Document', spaceId, {
     title,
-    content,
+    content: blobId,
     category: null,
     attachments: 0,
     comments: 0,
     labels: [],
     members: [],
     relations: []
-  })
+  }, docId)
   console.log(`  Vytvořen: "${title}" (${docId})`)
   return docId
 }
@@ -323,8 +326,8 @@ async function main () {
   console.log(`Mode: ${APPLY ? 'APPLY' : 'DRY-RUN'}\n`)
 
   console.log('Sloučené dokumenty:')
-  await createOrReplaceDoc(client, zakladSpace._id, zakladSpace.name, HOME_TITLE, HOME_CONTENT, APPLY)
-  await createOrReplaceDoc(client, zakladSpace._id, zakladSpace.name, PRIRUCKA_TITLE, PRIRUCKA_CONTENT, APPLY)
+  await createOrReplaceDoc(client, zakladSpace._id, zakladSpace.name, HOME_TITLE, HOME_CONTENT, APPLY, selected.token)
+  await createOrReplaceDoc(client, zakladSpace._id, zakladSpace.name, PRIRUCKA_TITLE, PRIRUCKA_CONTENT, APPLY, selected.token)
 
   console.log('\nZastaralé dokumenty (mažeme po sloučení 6 → 2):')
   await deleteStaleDocs(client, zakladSpace._id, APPLY)

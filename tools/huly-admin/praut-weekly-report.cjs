@@ -16,6 +16,7 @@ const coreMod = require('@hcengineering/core'); const { TxOperations } = coreMod
 const { setMetadata } = require('@hcengineering/platform')
 const scp = require('@hcengineering/server-client').default
 const { createClient, getAccountClient } = require('@hcengineering/server-client')
+const { uploadDocContent } = require(require('path').join(__dirname, 'praut-doc-content.cjs'))
 
 const APPLY = process.argv.includes('--apply')
 const REPORT_SPACE = 'Řízení a reporting'
@@ -54,13 +55,12 @@ async function main () {
     projRows.push({ name: clean(p.name), total: list.length, open: open.length, noOwner: noOwner.length, started: started.length, closedWeek: closedWeek.length, newWeek: newWeek.length })
   }
 
-  // --- Obchod: leady + karty ---
+  // --- Obchod: leady (Karty modul je vypnutý — obchod = jen Lead, rozhodnutí 2026-07-08) ---
   const leads = await c.findAll('lead:class:Lead', {})
   const leadStatuses = await c.findAll('core:class:Status', { ofAttribute: 'lead:attribute:State' })
   const lsName = {}; for (const st of leadStatuses) lsName[st._id] = clean(st.name)
   const leadByStage = {}; for (const l of leads) { const k = lsName[l.status] || '—'; leadByStage[k] = (leadByStage[k] || 0) + 1 }
-  const cards = await c.findAll('card:class:Card', {})
-  const newCardsWeek = cards.filter((cd) => (cd.createdOn || 0) >= weekAgo).length
+  const newLeadsWeek = leads.filter((l) => (l.createdOn || 0) >= weekAgo).length
 
   // --- Lidé ---
   const persons = await c.findAll('contact:class:Person', {})
@@ -95,14 +95,14 @@ ${flagsHtml}
 <h2>📈 Obchod</h2>
 <p>Leady podle fáze:</p>
 <table><thead><tr><th>Fáze</th><th>Počet</th></tr></thead><tbody>${leadTable}</tbody></table>
-<p>Nové obchodní karty za týden: <strong>${newCardsWeek}</strong> · leadů celkem: <strong>${leads.length}</strong></p>
+<p>Nové leady za týden: <strong>${newLeadsWeek}</strong> · leadů celkem: <strong>${leads.length}</strong></p>
 <h2>👥 Lidé</h2>
 <p>Aktivních zaměstnanců: <strong>${active}</strong>${newPeople.length ? ' · noví za týden: ' + esc(newPeople.join(', ')) : ''}</p>
 `.trim()
 
   console.log(`Mode: ${APPLY ? 'APPLY' : 'DRY-RUN'} | ${today}`)
   console.log('--- projekty ---'); projRows.forEach((r) => console.log(`  ${r.name}: open=${r.open} inProgress=${r.started} bezVlastnika=${r.noOwner} zavreno7d=${r.closedWeek} nove7d=${r.newWeek}`))
-  console.log('--- obchod ---', JSON.stringify(leadByStage), 'noveKarty7d=' + newCardsWeek)
+  console.log('--- obchod ---', JSON.stringify(leadByStage), 'noveLeady7d=' + newLeadsWeek)
   console.log('--- lidé --- aktivní=' + active, newPeople.length ? 'noví=' + newPeople.join(',') : '')
   console.log('--- red flags ---'); flags.forEach((f) => console.log('  ⚠️ ' + f)); if (!flags.length) console.log('  (žádné)')
 
@@ -110,11 +110,13 @@ ${flagsHtml}
   const space = teamspaces.find((t) => clean(t.name) === REPORT_SPACE)
   if (!space) { console.log('\nCHYBA: teamspace nenalezen:', REPORT_SPACE); await conn.close(); process.exit(1) }
   if (APPLY) {
-    const id = await c.createDoc('document:class:Document', space._id, {
-      title: `📊 Týdenní přehled — ${today}`, content: CONTENT, parent: 'document:ids:NoParent',
+    const docId = coreMod.generateId()
+    const blobId = await uploadDocContent(sel.token, docId, CONTENT)
+    await c.createDoc('document:class:Document', space._id, {
+      title: `📊 Týdenní přehled — ${today}`, content: blobId, parent: 'document:ids:NoParent',
       category: null, attachments: 0, comments: 0, labels: [], members: [], relations: [], rank: '0|hzzzzz:'
-    })
-    console.log('\n✅ Vytvořeno:', id, '| do:', REPORT_SPACE, '| znaků:', CONTENT.length)
+    }, docId)
+    console.log('\n✅ Vytvořeno:', docId, '| do:', REPORT_SPACE, '| znaků:', CONTENT.length)
   } else {
     console.log(`\nDRY-RUN: vytvořil bych dokument v "${REPORT_SPACE}" (${CONTENT.length} znaků HTML). Spusť s --apply.`)
   }

@@ -18,6 +18,27 @@ jen ručním klikáním v UI. Tyto skripty to dělají programově a opakovateln
 - Admin přihlášení čtou z `/Users/stepan/praut/huly-poc-secrets.env`
   (`ADMIN_EMAIL`, `ADMIN_PASSWORD`) — soubor je mimo git.
 
+## ⚠️ Obsah dokumentů — POVINNÝ vzor (od 2026-07-03)
+
+Pole `content` u `document:class:Document` je **blob ref** (odkaz na kolaborativní
+obsah v úložišti), **NE HTML**. HTML v `content` = dokument se v UI donekonečna
+načítá (collaborator: `InvalidObjectNameError`). Incident 2026-07-03: takhle bylo
+rozbitých 18 dokumentů, opraveno in-place.
+
+Správně (viz `praut-doc-content.cjs` a použití v `praut-quickstart-doc.cjs`):
+
+```js
+const { uploadDocContent } = require(require('path').join(__dirname, 'praut-doc-content.cjs'))
+const docId = coreMod.generateId()
+const blobId = await uploadDocContent(sel.token, docId, HTML)   // workspace token!
+await client.createDoc('document:class:Document', space._id, { ..., content: blobId }, docId)
+```
+
+Diagnostika/oprava:
+- `praut-scan-broken-docs.cjs` — READ-ONLY, najde dokumenty s HTML v `content`
+- `praut-fix-broken-docs.cjs` — in-place oprava (HTML → blob, ID dokumentu zůstává)
+- `praut-clean-doc-whitespace.cjs` — dočistí whitespace artefakty po konverzi
+
 ## Aktuální stav workspace (2026-06-22)
 
 ### Živé v huly.praut.cz
@@ -91,6 +112,11 @@ ověřena jen shoda struktury s funkčním pilotem (dumpem).
 | `praut-mgmt-docs.cjs` | **(T07/T08/T11)** Vytvoří/obnoví 3 dokumenty do privátních prostorů: „🏠 Přehled firmy" + „✅ Onboarding nováčka" (Řízení a reporting), „📈 Jak vedeme obchod" (Obchodní dokumenty). Idempotentní. `--apply` provede. |
 | `praut-merge-persons.cjs` | Sloučí duplicitní osoby (account-merge). `--search <jméno>` = read-only výpis kandidátů; `--primary <uuid\|jméno> --secondary <uuid\|jméno>` = DRY-RUN; `--apply` provede. Volí `mergeSpecifiedAccounts`/`mergeSpecifiedPersons` dle stavu. **Pozor:** account-merge NEpřepojí workspace `SocialIdentity.attachedTo` — po merge může zbýt chyba „Confirmed social identity is attached to the wrong person" (nutno přepojit identity na cílovou osobu). Nejdřív ZÁLOHA DB. |
 | `praut-create-relations.cjs` | Hromadně vytvoří typy vztahů (Association) mezi kartami/kontakty — řeší prázdné „Přidat vztah". DRY-RUN bez `--apply`. |
+| `praut-configure-apps.cjs` | **Zjednodušení menu:** vypne nepoužívané moduly per workspace (`core:class:PluginConfiguration.enabled=false`) — bez buildu, vratné (`--restore <pluginId>`), data zůstávají. DRY-RUN vypíše všechny pluginy + plán. Rozhodnutí 2026-07-08: obchod = Lead, karty/HR/drive/procesy… vypnuty. |
+
+> ⚠️ **Od 2026-07-08 jsou moduly Karty + Process vypnuté** (viz `praut-configure-apps.cjs` a DECISIONS).
+> Karty skripty (`praut-typemap`, `praut-build-views`, `praut-create-demo`, `praut-build-processes`,
+> `praut-hide-types`, `praut-create-spaces`) jsou dočasně irelevantní — před použitím moduly zapnout zpět.
 
 ## Důležitý detail formátu filtru
 

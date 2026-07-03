@@ -3,7 +3,8 @@
 //   💼 Obchodník            → "Obchodní dokumenty" (privátní, vedení/obchod)
 //   📣 Markeťák             → "Marketing" (privátní)
 //   👔 Vedoucí              → "Řízení a reporting" (privátní)
-// Idempotentní: dokument se stejným názvem se přepíše. Obsah = HTML v poli `content`.
+// Idempotentní: dokument se stejným názvem se přepíše. Obsah se nahrává jako
+// kolaborativní blob (praut-doc-content.cjs) — do `content` patří blob ref, NE HTML.
 //
 //   node praut-role-guides.cjs           DRY-RUN
 //   node praut-role-guides.cjs --apply    vytvoří/obnoví
@@ -17,6 +18,7 @@ const coreMod = require('@hcengineering/core'); const { TxOperations } = coreMod
 const { setMetadata } = require('@hcengineering/platform')
 const scp = require('@hcengineering/server-client').default
 const { createClient, getAccountClient } = require('@hcengineering/server-client')
+const { uploadDocContent } = require(require('path').join(__dirname, 'praut-doc-content.cjs'))
 
 const APPLY = process.argv.includes('--apply')
 function env (f) { const o = {}; for (const l of fs.readFileSync(f, 'utf8').split('\n')) { const m = l.match(/^([A-Z_]+)=(.*)$/); if (m) o[m[1]] = m[2].trim() } return o }
@@ -63,18 +65,18 @@ const GUIDES = [
 <h2>Kam píšu co</h2>
 <ul>
   <li><strong>Nový zájemce</strong> → nový <strong>lead</strong> ve funnelu, fáze <em>Zájemce/Kvalifikace</em>.</li>
-  <li><strong>Nabídka / zakázka / faktura</strong> → <strong>karta</strong> v prostoru <strong>Obchod</strong> (ne v Default!).</li>
-  <li><strong>Firmy a kontakty</strong> → <strong>Contacts</strong>.</li>
+  <li><strong>Nabídka, hodnota, termín, dohody</strong> → přímo do leadu (popis + komentáře). <strong>Celý obchodní případ žije v jednom leadu</strong> — žádná jiná evidence.</li>
+  <li><strong>Firmy a kontakty</strong> → <strong>Contacts</strong> (lead na firmu odkazuje).</li>
 </ul>
 <h2>Moje povinnosti</h2>
 <ul>
   <li>Každý lead posouvám fázemi: <em>Zájemce → Kvalifikace → Vyjednávání → Příprava nabídky → Rozhodování → Uzavření → Vyhráno/Prohráno</em>.</li>
-  <li><strong>Aktualizuji aspoň 1× týdně.</strong> Lead bez aktivity 7 dní spustí alert.</li>
-  <li>U nabídky/zakázky vyplním klienta, hodnotu, termín a vlastníka.</li>
+  <li><strong>Aktualizuji aspoň 1× týdně</strong> (fáze + poznámka co se stalo).</li>
+  <li>U nabídky do leadu vyplním: klient, hodnota, termín, další krok.</li>
 </ul>
 <h2>Co nesmím</h2>
 <ul>
-  <li>Nechávat obchodní data v obecném prostoru „Default" — patří do <strong>Obchod</strong> (vidí jen vedení/obchod).</li>
+  <li>Vést obchodní případy mimo Lead (tabulky, e-mail, hlava) — vedení pak nevidí stav.</li>
   <li>Slibovat klientovi bez schválení vedení.</li>
 </ul>
 <h2>Potřebuju pomoc</h2>
@@ -119,8 +121,7 @@ const GUIDES = [
 <h2>Co hlídám</h2>
 <ul>
   <li>Každý otevřený úkol má <strong>vlastníka</strong> a termín. Úkol bez vlastníka = přiřadím.</li>
-  <li>Leady/zakázky bez aktivity — řeším s obchodem.</li>
-  <li>Alerty z procesů (nabídka ke schválení, SLA, zakázka v riziku).</li>
+  <li>Leady bez aktivity přes týden — řeším s obchodem (vidím je v týdenním přehledu).</li>
 </ul>
 <h2>Moje povinnosti</h2>
 <ul>
@@ -152,10 +153,12 @@ async function main () {
     console.log(`  ${existing ? '↻' : '+'} "${g.title}" → ${g.space} (${content.length} znaků)${existing ? ' [přepíšu]' : ''}`)
     if (APPLY) {
       if (existing) await c.removeDoc(existing._class, existing.space, existing._id)
+      const docId = coreMod.generateId()
+      const blobId = await uploadDocContent(sel.token, docId, content)
       await c.createDoc('document:class:Document', space._id, {
-        title: g.title, content, parent: 'document:ids:NoParent',
+        title: g.title, content: blobId, parent: 'document:ids:NoParent',
         category: null, attachments: 0, comments: 0, labels: [], members: [], relations: [], rank: '0|hzzzzy:'
-      })
+      }, docId)
     }
   }
   console.log(`\nRežim: ${APPLY ? 'APPLIED' : 'DRY-RUN → pro zápis přidej --apply'}`)

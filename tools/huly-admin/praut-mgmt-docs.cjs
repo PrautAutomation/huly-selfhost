@@ -2,7 +2,8 @@
 //   🏠 Přehled firmy (rozcestník)        → "Řízení a reporting"  [T07]
 //   📈 Jak vedeme obchod                 → "Obchodní dokumenty"  [T08]
 //   ✅ Onboarding nováčka — checklist    → "Řízení a reporting"  [T11]
-// Vše do PRIVÁTNÍCH prostorů (jen vedení). Obsah = HTML v poli `content`.
+// Vše do PRIVÁTNÍCH prostorů (jen vedení). Obsah se nahrává jako kolaborativní
+// blob (praut-doc-content.cjs) — do pole `content` patří blob ref, NE HTML.
 //
 //   node praut-mgmt-docs.cjs           DRY-RUN
 //   node praut-mgmt-docs.cjs --apply    vytvoří/obnoví
@@ -16,6 +17,7 @@ const coreMod = require('@hcengineering/core'); const { TxOperations } = coreMod
 const { setMetadata } = require('@hcengineering/platform')
 const scp = require('@hcengineering/server-client').default
 const { createClient, getAccountClient } = require('@hcengineering/server-client')
+const { uploadDocContent } = require(require('path').join(__dirname, 'praut-doc-content.cjs'))
 
 const APPLY = process.argv.includes('--apply')
 function env (f) { const o = {}; for (const l of fs.readFileSync(f, 'utf8').split('\n')) { const m = l.match(/^([A-Z_]+)=(.*)$/); if (m) o[m[1]] = m[2].trim() } return o }
@@ -27,8 +29,7 @@ const DOCS = [
 <p>Rozcestník pro vedení — odsud se doklikáš na vše podstatné. (Odkazy otevírej v Huly; některé moduly najdeš v levém panelu.)</p>
 <h2>Obchod</h2>
 <ul>
-  <li><strong>Lead</strong> — obchodní pipeline (funnel „Potencionální zákazník"), fáze Zájemce → … → Vyhráno/Prohráno.</li>
-  <li><strong>Karty → Obchod</strong> — příležitosti, nabídky, zakázky, faktury (privátní, jen vedení/obchod).</li>
+  <li><strong>Lead</strong> — CELÝ obchod na jednom místě (funnel „Potencionální zákazník"), fáze Zájemce → … → Vyhráno/Prohráno. Hodnoty a dohody přímo v leadu.</li>
   <li>Návod: <em>📈 Jak vedeme obchod</em> (v „Obchodní dokumenty").</li>
 </ul>
 <h2>Práce a projekty</h2>
@@ -42,7 +43,7 @@ const DOCS = [
 </ul>
 <h2>Lidé</h2>
 <ul>
-  <li><strong>Contacts</strong> — firmy a kontakty. <strong>HR</strong> — oddělení a lidé.</li>
+  <li><strong>Contacts</strong> — firmy, kontakty i zaměstnanci (HR modul je vypnutý — nepoužíváme).</li>
   <li>Onboarding nováčka: <em>✅ Onboarding nováčka — checklist</em> (tento prostor).</li>
 </ul>
 <h2>Znalosti</h2>
@@ -50,29 +51,27 @@ const DOCS = [
   <li><strong>Firemní dokumentace HULY</strong> — sdílené návody, pravidla, rychlý start.</li>
   <li>Návody per role (vývojář/obchodník/markeťák/vedoucí).</li>
 </ul>
-<h2>Co zatím nejde (přijde s novým serverem)</h2>
-<p>Pokročilé uložené pohledy „Bez vlastníka"/„Moje"/„Obnovy do 60 dní" a AI funkce — vyžadují úpravu kódu, plánováno po migraci na vlastní server.</p>
+<h2>Zjednodušení systému (2026-07-08)</h2>
+<p>Vypnuli jsme nepoužívané moduly (Karty, HR, Drive, Boards, procesy…) — <strong>obchod = Lead, práce = Tracker, znalosti = Dokumenty, komunikace = Chat</strong>. Data vypnutých modulů zůstávají v DB; moduly jde kdykoliv zapnout zpět (Nastavení → Konfigurovat). Automatické alerty a AI funkce přijdou po migraci na vlastní server.</p>
 ` },
   { space: 'Obchodní dokumenty', title: '📈 Jak vedeme obchod', html: `
 <h1>📈 Jak vedeme obchod</h1>
 <p>Závazný postup, aby obchodní pipeline žila a vedení vidělo reálný stav. Vše v privátních prostorech (vidí jen vedení/obchod).</p>
-<h2>Řetěz obchodního případu</h2>
-<p><strong>Lead → Nabídka → Zakázka → Faktura.</strong></p>
+<h2>Jedno místo: Lead</h2>
+<p><strong>Celý obchodní případ = jeden lead ve funnelu „Potencionální zákazník".</strong> Od prvního kontaktu po výhru/prohru. Žádné karty, žádné tabulky bokem — všechno (hodnota, nabídka, dohody, další krok) se píše přímo do leadu (popis + komentáře).</p>
 <ul>
-  <li><strong>Lead</strong> = nový zájemce ve funnelu „Potencionální zákazník". Zakládá obchodník hned, jak se ozve zájemce.</li>
-  <li><strong>Nabídka / Zakázka / Faktura</strong> = karty v prostoru <strong>Obchod</strong> (NE v obecném „Default"!).</li>
+  <li><strong>Nový zájemce</strong> → obchodník založí lead hned, jak se ozve. Lead odkazuje na firmu v Contacts.</li>
+  <li><strong>Nabídka</strong> → do leadu: klient, hodnota, termín, číslo nabídky (konvence <code>N-2026-001</code>); PDF nabídky jako příloha leadu.</li>
+  <li><strong>Výhra</strong> → fáze Vyhráno + založit realizační úkoly v Trackeru. <strong>Prohra</strong> → fáze Prohráno + 1 věta proč.</li>
 </ul>
 <h2>Fáze leadu</h2>
 <p>Zájemce → Kvalifikace → Vyjednávání → Příprava nabídky → Rozhodování → Uzavření → Vyhráno / Prohráno.</p>
 <h2>Pravidla</h2>
 <ul>
-  <li>Každý lead <strong>aktualizuj aspoň 1× týdně</strong>. Lead bez aktivity 7 dní spustí automatický alert.</li>
-  <li>U nabídky/zakázky vyplň: <strong>klient, hodnota, termín, vlastník</strong>.</li>
-  <li>Nová obchodní karta patří do prostoru <strong>Obchod</strong> — pokud vznikne v „Default", přesuň ji.</li>
-  <li>Číslování nabídek: doporučeně <code>N-2026-001</code> (konvence; automatické číslování přijde s novým serverem).</li>
+  <li>Každý lead <strong>aktualizuj aspoň 1× týdně</strong> (fáze + poznámka co se stalo). Leady bez aktivity vidí vedení v týdenním přehledu.</li>
+  <li>Každý lead má <strong>vlastníka a další krok</strong> — lead bez dalšího kroku je mrtvý lead.</li>
+  <li>Fakturace se zatím eviduje mimo Huly (účetnictví); po migraci na nový server zvážíme napojení.</li>
 </ul>
-<h2>Šablony (TODO vytvořit karty)</h2>
-<p>V prostoru Obchod vytvoř vzorové karty <strong>„ŠABLONA — Nabídka"</strong> a <strong>„ŠABLONA — Zakázka"</strong> s vyplněnými povinnými poli — nový obchodník je pak jen zkopíruje. (Zakládá vedení ručně; do budoucna lze skriptem.)</p>
 ` },
   { space: 'Řízení a reporting', title: '✅ Onboarding nováčka — checklist', html: `
 <h1>✅ Onboarding nováčka — checklist</h1>
@@ -86,7 +85,7 @@ const DOCS = [
   <li>☐ <strong>Ověřit přístupy</strong> — vidí jen to, co má (viz <code>--list-roles</code>).</li>
   <li>☐ <strong>Poslat odkazy</strong>: Rychlý start + jeho role návod (👨‍💻/💼/📣/👔).</li>
   <li>☐ <strong>Přidat do kanálu</strong> #praut-denni-prehled (má autoJoin — mělo by se stát samo).</li>
-  <li>☐ <strong>Zařadit do HR oddělení</strong> (Vývoj / Obchod / Marketing / Vedení).</li>
+  <li>☐ <strong>Přidat do týmu v role návodu</strong> — poslat mu odkaz na jeho tým (HR modul je vypnutý, tým = role + prostory).</li>
   <li>☐ <strong>První úkol v Trackeru</strong> — vlastník = nováček (ať si systém osahá).</li>
 </ul>
 <h2>Odchod zaměstnance</h2>
@@ -110,10 +109,12 @@ async function main () {
     console.log(`  ${existing ? '↻' : '+'} "${d.title}" → ${d.space} (${content.length} znaků)${existing ? ' [přepíšu]' : ''}`)
     if (APPLY) {
       if (existing) await c.removeDoc(existing._class, existing.space, existing._id)
+      const docId = coreMod.generateId()
+      const blobId = await uploadDocContent(sel.token, docId, content)
       await c.createDoc('document:class:Document', space._id, {
-        title: d.title, content, parent: 'document:ids:NoParent',
+        title: d.title, content: blobId, parent: 'document:ids:NoParent',
         category: null, attachments: 0, comments: 0, labels: [], members: [], relations: [], rank: '0|hzzzzx:'
-      })
+      }, docId)
     }
   }
   console.log(`\nRežim: ${APPLY ? 'APPLIED' : 'DRY-RUN → pro zápis přidej --apply'}`)

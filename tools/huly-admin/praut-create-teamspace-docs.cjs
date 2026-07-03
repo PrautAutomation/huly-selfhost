@@ -16,6 +16,7 @@ const { TxOperations } = coreMod
 const { setMetadata } = require('@hcengineering/platform')
 const serverClientPlugin = require('@hcengineering/server-client').default
 const { createClient, getAccountClient } = require('@hcengineering/server-client')
+const { uploadDocContent } = require(require('path').join(__dirname, 'praut-doc-content.cjs'))
 
 const APPLY = process.argv.includes('--apply')
 const DOC_TITLE = 'Co sem patří — přehled'
@@ -226,16 +227,18 @@ async function main () {
     }
 
     if (APPLY) {
+      const docId = coreMod.generateId()
+      const blobId = await uploadDocContent(selected.token, docId, docSpec.content)
       await client.createDoc('document:class:Document', sp._id, {
         title: DOC_TITLE,
-        content: docSpec.content,
+        content: blobId,
         category: null,
         attachments: 0,
         comments: 0,
         labels: [],
         members: [],
         relations: []
-      })
+      }, docId)
       created++
       console.log(`  Vytvořen: "${sp.name}" → "${DOC_TITLE}"`)
     } else {
