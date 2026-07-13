@@ -5,7 +5,11 @@ Přehled produkčních změn. Novější nahoře. Detaily v PR (číslo v závor
 
 > Pravidlo: každá produkční změna = nový řádek sem (viz `../AGENTS.md`).
 
-## 2026-07 — Roadmapa vylepšení (audit + vlna 1)
+## 2026-07 — Roadmapa vylepšení (audit + vlny 1–2)
+- 2026-07-03 — **Trvalý okamžitý výmaz** bývalých zaměstnanců Filip Hirt + Lukáš Lisičan (workspace karty + zbytkové DB řádky social_id/person). Nový nástroj `praut-purge-user.cjs`; oprava DB sloupců v offboard skriptu.
+- 2026-07-02 — Vlna 2: AGENTS.md, CHANGELOG, 4 SOP, mgmt-docs skript (#32). Aplikováno: 3 manažerské dokumenty, archiv DASTA_PREVOD, úklid HR oddělení.
+
+### Vlna 1 (2026-07-02)
 - 2026-07-02 — Kompletní audit ERP + roadmapa 22 úkolů pro agenty: `docs/improvements/ROADMAP-2026-07.md` (#27, otevřený).
 - 2026-07-02 — Záchrana admin skriptů `praut-merge-persons` + `praut-create-relations` na main (#28).
 - 2026-07-02 — Spec „výběr PRAUT role při pozvánce" na main (#29).

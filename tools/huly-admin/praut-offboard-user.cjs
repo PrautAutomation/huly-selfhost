@@ -102,9 +102,9 @@ async function main () {
       const newName = p && !/bývalý zaměstnanec/.test(p.name) ? `${p.name} (bývalý zaměstnanec)` : (p ? p.name : e.name)
       console.log(`\n• ${e.name} (uuid=${e.uuid})`)
       console.log(`  1) přejmenovat osobu → "${newName}" (obsah zůstává s označením), active=false`)
-      console.log(`  2) SMAZAT účet v DB (spusť na serveru):`)
-      console.log(`     docker compose exec -T cockroach ./cockroach sql --certs-dir=certs --host=127.0.0.1:26257 --database=defaultdb -e "DELETE FROM global_account.workspace_members WHERE account = '${e.uuid}'; DELETE FROM global_account.social_id WHERE account = '${e.uuid}'; DELETE FROM global_account.account WHERE uuid = '${e.uuid}';"`)
-      console.log('     (POZN.: názvy sloupců social_id/workspace_members ověřit na serveru — viz [[huly-account-management]].)')
+      console.log(`  2) SMAZAT účet v DB (spusť na serveru) — správné názvy sloupců ověřeny 2026-07-03:`)
+      console.log(`     docker compose exec -T cockroach ./cockroach sql --certs-dir=certs --host=127.0.0.1:26257 --database=defaultdb -e "DELETE FROM global_account.workspace_members WHERE account_uuid = '${e.uuid}'; DELETE FROM global_account.account_passwords WHERE account_uuid = '${e.uuid}'; DELETE FROM global_account.account_events WHERE account_uuid = '${e.uuid}'; DELETE FROM global_account.social_id WHERE person_uuid = '${e.uuid}'; DELETE FROM global_account.person WHERE uuid = '${e.uuid}'; DELETE FROM global_account.account WHERE uuid = '${e.uuid}';"`)
+      console.log('     (Pořadí: děti před rodičem. Pro OKAMŽITÝ výmaz bez 60denní lhůty použij praut-purge-user.cjs <personId> --apply --sql.)')
       if (APPLY && p) { await client.updateDoc(p._class, p.space, p._id, { name: newName }); console.log('  → osoba přejmenována (API).') }
     }
     if (APPLY) console.log('\nDB výmaz NEPROVÁDÍM odsud — spusť vypsané SQL na serveru, pak odeber z trackeru.')
